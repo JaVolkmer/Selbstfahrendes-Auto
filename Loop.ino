@@ -4,6 +4,8 @@
 void loop(void)
 {
   processAccelGyro();
+  if (!calibratedSW)
+    calibrateSW();
   if ((millis() - timeMil) > SEND_DELAY) {
     strOut = (int)winkel;
     strOut += "|";
@@ -22,15 +24,15 @@ void loop(void)
     timeMil = millis();
   }
   //if (!calibratedSW && servoArm.read() == ARM_DOWN_POS) {
-   // calibrateSW();
-    /*
+  // calibrateSW();
+  /*
     if (calibrationCounter > 100) {
-      Serial.print("SW Kalibriert! - SL: ");
-      Serial.print(SWVL_Cal);
-      calibratedSW = true;
-      calibrationCounter = 0;
+    Serial.print("SW Kalibriert! - SL: ");
+    Serial.print(SWVL_Cal);
+    calibratedSW = true;
+    calibrationCounter = 0;
     }
-    */
+  */
   //}
   if (isCalibrate) {
 
@@ -70,13 +72,22 @@ void loop(void)
     }
 
     if (bleDat[0] != 0 && bleDat[1] != 0) { //Fahre autonom
+      calcWay();
+      bleDat[0] = 0;
+      bleDat[1] = 0;
       //Serial.println("Autonom!");
       //...
     } else if (bleDat[2] != 0) { //Fahre nach Buttons
       switch (bleDat[2]) {
         case 1: moveToSide(true, 100);  break;        //links
         case 2: moveToSide(false, 100); break;       //rechts
-        case 3: /*makeCurve(0, 0, true, 100);*/ if(calibratedSW){followLine = false; crossCounter = 0; curveNext = false;}else{SWinCal= true;} break; //auf der Stelle drehen links
+        case 3: /*makeCurve(0, 0, true, 100);*/ if (calibratedSW) {
+            followLine = false;
+            crossCounter = 0;
+            curveNext = false;
+          } else {
+            SWinCal = true;
+          } break; //auf der Stelle drehen links
         case 4: /*makeCurve(0, 0, false, 100);*/ followLine = true; break;  //auf der Stelle drehen rechts
         case 5: moveArm(false); break;          //Arm runter
         case 6: moveArm(true); break;           //Arm hoch
@@ -95,7 +106,7 @@ void loop(void)
         detachServos(false);
       }
     }
-    if(SWinCal){
+    if (SWinCal) {
       calibrateSW();
     }
     if (followLine) {
@@ -106,6 +117,9 @@ void loop(void)
     }
     if (searchingLine) {
       searchLine();
+    }
+    if(waiting){
+      wait();
     }
     if (straight != oldStraight) {
       thisWinkel = winkel;

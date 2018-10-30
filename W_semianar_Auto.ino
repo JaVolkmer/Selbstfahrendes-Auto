@@ -38,7 +38,7 @@
 #define SW_Sensor_M3 0
 #define SW_Sensor_VL 30
 #define SW_Sensor_VR 30
-#define SW_PUFFER 50
+#define SW_PUFFER 70    //vorher 50
 #define ULTRA_CALIBRATE 0.03432
 #define SEND_DELAY 100
 #define CROSS_DURATION 150  //normal 200
@@ -98,14 +98,15 @@ boolean pulse1 = false;
 boolean pulse2 = false;
 boolean straight = false;
 boolean oldStraight = false;
-int crossDirs[7] = {0, 1, 2, 0, 0, 0, 0}; //0 = gerade, 1 = links abbiegen, 2 = rechts abbiegen
-int crossCounter;
+uint8_t crossDirs[12] = {0, 0, 0, 0, 0, 0, 0, 0 , 0, 0, 0}; //0 = gerade, 1 = links abbiegen, 2 = rechts abbiegen
+int crossCounter = 0;
 boolean inCrossing = false;
 int crossTime = 0;
 boolean searchingLine = false;
 int searchTime = 10;
 int searchCount = 0;
 int whiteTime;
+boolean waiting;
 
 int SWML_Cal;
 int SWMM_Cal;
@@ -115,6 +116,7 @@ int SWVR_Cal;
 bool calibratedSW = false;
 int calibrationCounter = 0;
 bool SWinCal = false;
+//int SWCalTime;
 
 int sollWinkel = 0;
 int servSpeed;

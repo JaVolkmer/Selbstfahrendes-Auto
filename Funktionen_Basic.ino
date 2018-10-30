@@ -280,42 +280,36 @@ int deltaWinkel(int winkel1, int winkel2) { //wie weit ist winkel 1 von winkel 2
 }
 
 void calibrateSW() {
-  /*
-    if (calibrationCounter == 0) {
-    SWML_Cal = analogRead(SWM3Pin) + SW_PUFFER;
-    SWMM_Cal = analogRead(SWM2Pin) + SW_PUFFER;
-    SWMR_Cal = analogRead(SWM1Pin) + SW_PUFFER;
-    SWVL_Cal = analogRead(SWVLPin) + SW_PUFFER;
-    SWVR_Cal = analogRead(SWVRPin) + SW_PUFFER;
-    }else{
-  */
-  SWML_Cal += analogRead(SWM3Pin);
-  SWMM_Cal += analogRead(SWM2Pin);
-  SWMR_Cal += analogRead(SWM1Pin);
-  SWVL_Cal += analogRead(SWVLPin);
-  SWVR_Cal += analogRead(SWVRPin);
-  Serial.println(calibrationCounter);
-  //}
-  if (calibrationCounter >= 29) { //30 durchgänge
+  if (calibrationCounter < 1000){
+    moveArm(false);
+  }else if(calibrationCounter < 1030){
+    SWML_Cal += analogRead(SWM3Pin);
+    SWMM_Cal += analogRead(SWM2Pin);
+    SWMR_Cal += analogRead(SWM1Pin);
+    SWVL_Cal += analogRead(SWVLPin);
+    SWVR_Cal += analogRead(SWVRPin);
+    Serial.println(calibrationCounter);
+  }else{
+  //if (calibrationCounter >= 29) { //30 durchgänge
     SWML_Cal = (SWML_Cal / 30) + SW_PUFFER;
-    SWMM_Cal = (SWMM_Cal / 30) + SW_PUFFER;
-    SWMR_Cal = (SWMR_Cal / 30) + SW_PUFFER;
-    SWVL_Cal = (SWVL_Cal / 30) + SW_PUFFER;
-    SWVR_Cal = (SWVR_Cal / 30) + SW_PUFFER;
-    Serial.print("SW Kalibriert! - ML: ");
-    Serial.print(SWML_Cal);
-    Serial.print("  MM: ");
-    Serial.print(SWMM_Cal);
-    Serial.print("  MR: ");
-    Serial.print(SWMR_Cal);
-    Serial.print("  VL: ");
-    Serial.print(SWVL_Cal);
-    Serial.print("  VR: ");
-    Serial.print(SWVR_Cal);
-    calibratedSW = true;
-    SWinCal = false;
-    calibrationCounter = 0;
-  }
+      SWMM_Cal = (SWMM_Cal / 30) + SW_PUFFER;
+      SWMR_Cal = (SWMR_Cal / 30) + SW_PUFFER;
+      SWVL_Cal = (SWVL_Cal / 30) + SW_PUFFER;
+      SWVR_Cal = (SWVR_Cal / 30) + SW_PUFFER;
+      Serial.print("SW Kalibriert! - ML: ");
+      Serial.print(SWML_Cal);
+      Serial.print("  MM: ");
+      Serial.print(SWMM_Cal);
+      Serial.print("  MR: ");
+      Serial.print(SWMR_Cal);
+      Serial.print("  VL: ");
+      Serial.print(SWVL_Cal);
+      Serial.print("  VR: ");
+      Serial.print(SWVR_Cal);
+      calibratedSW = true;
+      SWinCal = false;
+      calibrationCounter = 0;
+    }
   calibrationCounter++;
 }
 
