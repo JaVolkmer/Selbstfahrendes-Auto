@@ -91,9 +91,8 @@ void setup() {                                //on start
   textFont(pixel);
 
   //Bluetooth:
-  //start listening for BT connections
+  //start listening for Connections
   bt.start();
-  //at app start select device…
   isConfiguring = true;
 
   //Sensor stuff:
@@ -529,10 +528,7 @@ void statusToString() {
 
 //Bluetooth
 void sendData(int fromHouse, int toHouse) {
-  //Send Data: StartHaus|ZielHaus|gedrückterButton|gasValue|kurvenWert
   byte[] data = {(byte)fromHouse, '|', (byte)toHouse, '|', (byte)activeButton, '|', (byte)(forewardSlider.value()+100), '|', (byte)(accelerometerY+100), 'E'};
-  //print("sending: "+data[0]+"  "+data[2]+"  "+data[4]+"  "+data[6]+"  "+data[8]);
-  //println("");
   if (!isConfiguring && connected()) {
     bt.broadcast(data);
   }
@@ -541,7 +537,6 @@ void sendData(int fromHouse, int toHouse) {
 void onKetaiListSelection(KetaiList klist) {
   String selection = klist.getSelection();
   bt.connectToDeviceByName(selection);
-  //dispose of list for now
   klist = null;
 }
 
@@ -550,12 +545,10 @@ void onKetaiListSelection(KetaiList klist) {
 void onBluetoothDataEvent(String who, byte[] data) {
   if (isConfiguring && !connected())
     return;
-  //received
   info += new String(data);
   if (info.contains("E")) {
     info = info.substring(0, info.length()-1);
     processInput();
-    //println(info);
     info = "";
   }
 }
@@ -568,36 +561,11 @@ boolean connected() {
   }
   return false;
 }
-/*
-void processInputVals() {
- for (byte b : datIn) {
- if (b == 'E') {
- processInput();
- charCount = 0;
- return;
- } else {
- bleInput[charCount] = b;
- charCount++;
- }
- }
- }
- */
+
 void processInput() {
 
-  /*
-  int counter = 0;
-   int vals[] = new int [4];
-   for (int i = 0; i < bleInput.length; i++) {
-   if (bleInput[i] == '|') {
-   counter++;
-   } else {
-   vals[counter] += datIn[i];
-   }
-   }
-   */
+
   String[] vals = split(info, '|');
-  //println(datIn);
-  //print("receiving:  " + vals[0] + "  " + vals[1] + "  " + vals[2] + "  " + vals[3]);
   rotation = parseInt(vals[0]);
   statusNum = parseInt(vals[1]);
   distFront = parseInt(vals[2]);
