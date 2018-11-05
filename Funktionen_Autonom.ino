@@ -19,6 +19,7 @@ void sendDebug() {
 
 void followTheLine() {
   straight = true;
+  /*
   Serial.print("MR: ");
   Serial.print(black(1));
   Serial.print(" - ");
@@ -47,51 +48,72 @@ void followTheLine() {
   Serial.print(deltaWinkel(winkel, thisWinkel));
   Serial.print("  curveTime: ");
   Serial.println(curveTime);
-
-  if ((black(4) || black(5)) && !curveNext && curveTime > 50) {
-    Serial.println("Kreuzung!");
+  */
+  if (crossDirs[crossCounter] == 4) { //Stop an Start Ziel    //erstmal überspringen
+    //crossCounter++;
+    waiting = true;
+  } else if (crossDirs[crossCounter] == 5) { //Wieder an Ladestation -> followLine = false
+    detachServos(false);
+    followLine = false;
+    //if ((black(4) || black(5)) && !curveNext && curveTime > 50) {
+  } else if ((black(4) || black(5)) && crossDirs[crossCounter] <= 3 && crossDirs[crossCounter] != 0 && curveTime > 50) {   //Kreuzung
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Kreuzung!");
     inCrossing = true;
     followLine = false;
     whiteTime = 0;
-  } else if (!black(1) && !black(2) && !black(3) &&  curveNext && disFront < 13) { //linkskurve 90
-    thisWinkel = toDegree(thisWinkel - 89);
-    Serial.println("Linkskurve!");
+    // } else if (!black(1) && !black(2) && !black(3) &&  curveNext && disFront < 13) { //linkskurve 90
+  } else if (!black(1) && !black(2) && !black(3) &&  crossDirs[crossCounter] == 6 && disFront < 13) { //linkskurve 90
+    thisWinkel = toDegree(thisWinkel - 90);   //vorher -89
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Linkskurve!");
+    crossCounter++;
     curveNext = false;
     whiteTime = 0;
     curveTime = 0;
-  } else if ((black(4) || black(5)) && curveNext && disFront < 21) {   //rechtskurve
+    // } else if ((black(4) || black(5)) && curveNext && disFront < 21) {   //rechtskurve
+  } else if ((black(4) || black(5)) && crossDirs[crossCounter] == 6 && disFront < 21) {   //rechtskurve
     thisWinkel = toDegree(thisWinkel + 90);
-    Serial.println("Rechtskurve!");
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Rechtskurve!");
+    crossCounter++;
     curveNext = false;
     whiteTime = 0;
     curveTime = 0;
   } else if (deltaWinkel(winkel, thisWinkel) > 45) {    //drehung ausgleichen extrem
     makeCurve(0, 0, true, 10);
-    Serial.println("Kurve1extrem");
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Kurve1extrem");
     whiteTime = 0;
   } else if (deltaWinkel(winkel, thisWinkel) < -45) {
     makeCurve(0, 0, false, 10);
-    Serial.println("Kurve2extrem");
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Kurve2extrem");
     whiteTime = 0;
   } else if (deltaWinkel(winkel, thisWinkel) > 3) {    //drehung ausgleichen    //davor > 2
     makeCurve(0, 60, true, 10);   //davor 70  //davor 55
-    Serial.println("Kurve1");
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Kurve1");
     whiteTime = 0;
   } else if (deltaWinkel(winkel, thisWinkel) < -3) {   //davor > 2
     makeCurve(0, 50, false, 10);  // davor 50   //davor 45
-    Serial.println("Kurve2");
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Kurve2");
     whiteTime = 0;
   } else if (black(2)) { //gut -> gerade
     moveStraight(thisWinkel, true, 10);
-    Serial.println("Gerade!");
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Gerade!");
     whiteTime = 0;
   } else if (black(1)) { //zu weit rechts
     moveToSide(true, 10);
-    Serial.println("Links");
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Links");
     whiteTime = 0;
   } else if (black(3)) { //zu weit links
     moveToSide(false, 10);
-    Serial.println("Rechts!");
+    Serial.print(crossDirs[crossCounter]);
+    Serial.println("  Rechts!");
     whiteTime = 0;
   } else if (whiteTime < 10) { //alle SW Sensoren weiß aber noch nicht lange
     detachServos(false);
@@ -105,17 +127,18 @@ void followTheLine() {
   curveTime++;
 }
 
-void cross(int crossdirection) {  //0 = gerade, 1 = links, 2 = rechts     //muss noch kalibriert werden
+void cross(int crossdirection) {  //0 = gerade, 1 = links, 2 = rechts, 3 = auch rechts
   straight = true;
   int cd = CROSS_DURATION;
   int i = 1;
   bool kurveFertig;
+  if(crossdirection == 3) crossdirection = 0;
   if (crossdirection == 2) i = -1;
   if (crossdirection != 0) cd += 100 - ((crossdirection - 1) * 50);
   if (crossdirection == 0 || (crossTime < 100 && crossdirection == 1) || (crossTime < 60 && crossdirection == 2)) {
     moveStraight(thisWinkel, true, 10);
     kurveFertig = false;
-  } else if (abs(deltaWinkel(winkel, toDegree(thisWinkel - (90*i)))) > 5 && !kurveFertig) {
+  } else if (abs(deltaWinkel(winkel, toDegree(thisWinkel - (90 * i)))) > 5 && !kurveFertig) {
     if (crossdirection == 1) {
       makeCurve(0, 0, false, 10);
     } else if (crossdirection == 2) {
@@ -130,7 +153,7 @@ void cross(int crossdirection) {  //0 = gerade, 1 = links, 2 = rechts     //muss
     }
   }
   if ((black(1) || black(2) || black(3)) && crossTime > 100) {
-    if (crossdirection == 1) thisWinkel = toDegree(thisWinkel - 90);   
+    if (crossdirection == 1) thisWinkel = toDegree(thisWinkel - 90);
     if (crossdirection == 2) thisWinkel = toDegree(thisWinkel + 90);
     crossTime = 0;
     followLine = true;
@@ -139,7 +162,7 @@ void cross(int crossdirection) {  //0 = gerade, 1 = links, 2 = rechts     //muss
     inCrossing = false;
   }
   if (crossTime >= cd) {
-    if (crossdirection == 1) thisWinkel = toDegree(thisWinkel - 90);    
+    if (crossdirection == 1) thisWinkel = toDegree(thisWinkel - 90);
     if (crossdirection == 2) thisWinkel = toDegree(thisWinkel + 90);
     crossTime = 0;
     searchingLine = true;
@@ -153,10 +176,11 @@ void cross(int crossdirection) {  //0 = gerade, 1 = links, 2 = rechts     //muss
 }
 
 void searchLine() {   //after crossing or curve if middle line was not be found
+  straight = true;
   Serial.println("searchLine!");
-  if (searchTime > (20 + (searchCount * 10))) {
-    searchTime = -20 - (searchCount * 10);
+  if (searchTime > (20 + (searchCount * 15))) {
     searchCount++;
+    searchTime = -20 - (searchCount * 10);
   }
   if (searchTime < 0)
     moveToSide(true, 20);
@@ -181,5 +205,89 @@ void searchLine() {   //after crossing or curve if middle line was not be found
   }
   searchTime ++;
   crossTime ++;
+}
+
+void calcWay() {  //1 = blau(VL), 2 = gelb(VR), 3 = grün(HL), 4 = rot(HR)
+  //crossDirs[] -> 1 = links, 2 = rechts, 3 = gerade, 4 = stop, 5 = Ende, 6 = Kurve
+  for (int i = 0; i < (sizeof(crossDirs) / sizeof(uint8_t)); i++) {
+    crossDirs[i] = 0;
+  }
+  if (bleDat[0] == 1) { // Start = blau
+    crossDirs[0] = 1; crossDirs[1] = 6; crossDirs[2] = 3; crossDirs[3] = 4;
+    if (bleDat[1] == 2) { //Ziel = gelb
+      crossDirs[4] = 6; crossDirs[5] = 3; crossDirs[6] = 6; crossDirs[7] = 4; crossDirs[8] = 3; crossDirs[9] = 6; crossDirs[10] = 1; crossDirs[11] = 5;
+    } else if (bleDat[1] == 3) { //Ziel = grün
+      crossDirs[4] = 6; crossDirs[5] = 2; crossDirs[6] = 2; crossDirs[7] = 1; crossDirs[8] = 4; crossDirs[9] = 6; crossDirs[10] = 2; crossDirs[11] = 5;
+    } else if (bleDat[1] == 4) { //Ziel = rot
+      crossDirs[4] = 6; crossDirs[5] = 2; crossDirs[6] = 1; crossDirs[7] = 2; crossDirs[8] = 4; crossDirs[9] = 6; crossDirs[10] = 1; crossDirs[11] = 5;
+    }
+  } else if (bleDat[0] == 2) { // Start = gelb
+    crossDirs[0] = 2; crossDirs[1] = 6; crossDirs[2] = 3; crossDirs[3] = 4;
+    if (bleDat[1] == 1) { //Ziel = blau
+      crossDirs[4] = 6; crossDirs[5] = 3; crossDirs[6] = 6; crossDirs[7] = 4; crossDirs[8] = 3; crossDirs[9] = 6; crossDirs[10] = 2; crossDirs[11] = 5;
+    } else if (bleDat[1] == 3) { //Ziel = grün
+      crossDirs[4] = 6; crossDirs[5] = 1; crossDirs[6] = 2; crossDirs[7] = 1; crossDirs[8] = 4; crossDirs[9] = 6; crossDirs[10] = 2; crossDirs[11] = 5;
+    } else if (bleDat[1] == 4) { //Ziel = rot
+      crossDirs[4] = 6; crossDirs[5] = 1; crossDirs[6] = 1; crossDirs[7] = 2; crossDirs[8] = 4; crossDirs[9] = 6; crossDirs[10] = 1; crossDirs[11] = 5;
+    }
+  } else if (bleDat[0] == 3) { // Start = grün
+    crossDirs[0] = 1; crossDirs[1] = 6; crossDirs[2] = 4;
+    if (bleDat[1] == 1) { //Ziel = blau
+      crossDirs[3] = 3; crossDirs[4] = 4; crossDirs[5] = 6; crossDirs[6] = 2; crossDirs[7] = 3; crossDirs[8] = 3; crossDirs[9] = 5;
+    } else if (bleDat[1] == 2) { //Ziel = gelb
+      crossDirs[3] = 2; crossDirs[4] = 3; crossDirs[5] = 1; crossDirs[6] = 4; crossDirs[7] = 6; crossDirs[8] = 1; crossDirs[9] = 3; crossDirs[10] = 3; crossDirs[11] = 5;
+    } else if (bleDat[1] == 4) { //Ziel = rot
+      crossDirs[3] = 2; crossDirs[4] = 3; crossDirs[5] = 2; crossDirs[6] = 4; crossDirs[7] = 6; crossDirs[8] = 1; crossDirs[9] = 5;
+    }
+  } else if (bleDat[0] == 4) { // Start = rot
+    crossDirs[0] = 2; crossDirs[1] = 6; crossDirs[2] = 4;
+    if (bleDat[1] == 1) { //Ziel = blau
+      crossDirs[3] = 1; crossDirs[4] = 3; crossDirs[5] = 2; crossDirs[6] = 4; crossDirs[7] = 6; crossDirs[8] = 2; crossDirs[9] = 3; crossDirs[10] = 3; crossDirs[11] = 5;
+    } else if (bleDat[1] == 2) { //Ziel = gelb
+      crossDirs[3] = 3; crossDirs[4] = 4; crossDirs[5] = 6; crossDirs[6] = 1; crossDirs[7] = 3; crossDirs[8] = 3; crossDirs[9] = 5;
+    } else if (bleDat[1] == 3) { //Ziel = grün
+      crossDirs[3] = 1; crossDirs[4] = 3; crossDirs[5] = 1; crossDirs[6] = 4; crossDirs[7] = 6; crossDirs[8] = 2; crossDirs[9] = 5;
+    }
+  } else {
+    Serial.println("falsche Zieleingabe!");
+  }
+  Serial.print("crossDirs: ");
+  Serial.print(crossDirs[0]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[1]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[2]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[3]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[4]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[5]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[6]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[7]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[8]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[9]);
+  Serial.print(" , ");
+  Serial.print(crossDirs[10]);
+  Serial.print(" , ");
+  Serial.println(crossDirs[11]);
+  followLine = true;
+}
+
+void wait(){      //neu -> ???
+  straight = true;
+  if(crossTime > 100){
+    followLine = false;
+    detachServos(false);
+  }else if(crossTime > 200){
+    followLine = true;
+    waiting = false;
+    crossTime = 0;
+  }
+  crossTime++;
 }
 
