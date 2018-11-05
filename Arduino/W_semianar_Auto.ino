@@ -32,13 +32,7 @@
 #define ZERO_SPEED 94
 #define ARM_UP_POS 180
 #define ARM_DOWN_POS 83
-#define SW_Sensor_VALUE 900     //Morgen 850, Nacht 910 
-#define SW_Sensor_M1 0
-#define SW_Sensor_M2 0
-#define SW_Sensor_M3 0
-#define SW_Sensor_VL 30
-#define SW_Sensor_VR 30
-#define SW_PUFFER 70    //vorher 50
+#define SW_PUFFER 60    //vorher 50 (nacht) oder 70 (tag)
 #define ULTRA_CALIBRATE 0.03432
 #define SEND_DELAY 100
 #define CROSS_DURATION 150  //normal 200
@@ -79,26 +73,18 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 
 float winkel;
 float winkelOld;
-float futureWinkel;
 float calValue;
 float calNumber;
 float calNumberOld;
 bool isCalibrate;
 bool armUp = true;
 bool debugMode = false;
-long armDelay;
 unsigned long timeMil;
 int disFront;
 int disBack;
-int disMode = 0;
-unsigned long ultraTime;
-unsigned long pulse1Time;
-unsigned long pulse2Time;
-boolean pulse1 = false;
-boolean pulse2 = false;
 boolean straight = false;
 boolean oldStraight = false;
-uint8_t crossDirs[12] = {0, 0, 0, 0, 0, 0, 0, 0 , 0, 0, 0}; //0 = gerade, 1 = links abbiegen, 2 = rechts abbiegen
+uint8_t crossDirs[12] = {3, 3, 5, 0, 0, 0, 0, 0 , 0, 0, 0}; //0 = gerade, 1 = links abbiegen, 2 = rechts abbiegen
 int crossCounter = 0;
 boolean inCrossing = false;
 int crossTime = 0;
@@ -107,6 +93,8 @@ int searchTime = 10;
 int searchCount = 0;
 int whiteTime;
 boolean waiting;
+long timeCount;
+boolean ending;
 
 int SWML_Cal;
 int SWMM_Cal;
@@ -116,19 +104,13 @@ int SWVR_Cal;
 bool calibratedSW = false;
 int calibrationCounter = 0;
 bool SWinCal = false;
-//int SWCalTime;
 
-int sollWinkel = 0;
-int servSpeed;
 float thisWinkel;
 int statusCar = 0;
 boolean followLine = false;
 boolean curveNext = false;
 long curveTime = 50;
 
-//bluetooth
-char blueToothVal;
-char lastBlueToothVal;
 int bleDat[5];
 int bleSpeed;
 int bleCurve;

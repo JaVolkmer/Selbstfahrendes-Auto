@@ -1,25 +1,8 @@
 
-void sendDebug() {
-  HC06.print("VL: ");
-  HC06.print(black(4));
-  HC06.print(" VR: ");
-  HC06.print(black(5));
-  HC06.print(" M1: ");
-  HC06.print(black(1));
-  HC06.print(" M2: ");
-  HC06.print(black(2));
-  HC06.print(" M3: ");
-  HC06.print(black(3));
-  HC06.print(" U1: ");
-  HC06.print(disFront);
-  HC06.print("cm U2: ");
-  HC06.print(disBack);
-  HC06.println("cm");
-}
 
 void followTheLine() {
   straight = true;
-  /*
+  //nur fürs Testen:
   Serial.print("MR: ");
   Serial.print(black(1));
   Serial.print(" - ");
@@ -48,21 +31,26 @@ void followTheLine() {
   Serial.print(deltaWinkel(winkel, thisWinkel));
   Serial.print("  curveTime: ");
   Serial.println(curveTime);
-  */
-  if (crossDirs[crossCounter] == 4) { //Stop an Start Ziel    //erstmal überspringen
-    //crossCounter++;
+
+  if (disFront < 5) { //hinderniss -> Stop!
+    Serial.println("Stop!");
+    detachServos(false);
+    whiteTime = 0;
+  } else if (crossDirs[crossCounter] == 4) { //Stop an Start Ziel    //erstmal überspringen
+    crossCounter++;
+    statusCar++;
+    //statusCar++; // -> nur gebraucht ohne waiting
+    timeCount = millis();
     waiting = true;
   } else if (crossDirs[crossCounter] == 5) { //Wieder an Ladestation -> followLine = false
-    detachServos(false);
     followLine = false;
-    //if ((black(4) || black(5)) && !curveNext && curveTime > 50) {
+    ending = true;
   } else if ((black(4) || black(5)) && crossDirs[crossCounter] <= 3 && crossDirs[crossCounter] != 0 && curveTime > 50) {   //Kreuzung
     Serial.print(crossDirs[crossCounter]);
     Serial.println("  Kreuzung!");
     inCrossing = true;
     followLine = false;
     whiteTime = 0;
-    // } else if (!black(1) && !black(2) && !black(3) &&  curveNext && disFront < 13) { //linkskurve 90
   } else if (!black(1) && !black(2) && !black(3) &&  crossDirs[crossCounter] == 6 && disFront < 13) { //linkskurve 90
     thisWinkel = toDegree(thisWinkel - 90);   //vorher -89
     Serial.print(crossDirs[crossCounter]);
@@ -71,7 +59,6 @@ void followTheLine() {
     curveNext = false;
     whiteTime = 0;
     curveTime = 0;
-    // } else if ((black(4) || black(5)) && curveNext && disFront < 21) {   //rechtskurve
   } else if ((black(4) || black(5)) && crossDirs[crossCounter] == 6 && disFront < 21) {   //rechtskurve
     thisWinkel = toDegree(thisWinkel + 90);
     Serial.print(crossDirs[crossCounter]);
@@ -129,56 +116,64 @@ void followTheLine() {
 
 void cross(int crossdirection) {  //0 = gerade, 1 = links, 2 = rechts, 3 = auch rechts
   straight = true;
-  int cd = CROSS_DURATION;
-  int i = 1;
-  bool kurveFertig;
-  if(crossdirection == 3) crossdirection = 0;
-  if (crossdirection == 2) i = -1;
-  if (crossdirection != 0) cd += 100 - ((crossdirection - 1) * 50);
-  if (crossdirection == 0 || (crossTime < 100 && crossdirection == 1) || (crossTime < 60 && crossdirection == 2)) {
-    moveStraight(thisWinkel, true, 10);
-    kurveFertig = false;
-  } else if (abs(deltaWinkel(winkel, toDegree(thisWinkel - (90 * i)))) > 5 && !kurveFertig) {
-    if (crossdirection == 1) {
-      makeCurve(0, 0, false, 10);
-    } else if (crossdirection == 2) {
-      makeCurve(0, 0, true, 10);
-    }
+  if (disFront < 7) {       //Hinderniss -> Stop
+    detachServos(false);
   } else {
-    kurveFertig = true;
-    if (crossdirection == 1) {
-      moveStraight(toDegree(thisWinkel - 90), true, 10);
-    } else if (crossdirection == 2) {
-      moveStraight(toDegree(thisWinkel + 90), true, 10);
+    int cd = CROSS_DURATION - 20; //normal ohne - 20
+    int i = 1;
+    bool kurveFertig;
+    if (crossdirection == 3) crossdirection = 0;
+    if (crossdirection == 2) i = -1;
+    if (crossdirection != 0) cd += 100 - ((crossdirection - 1) * 50);
+    if (crossdirection == 0 || (crossTime < 80 && crossdirection == 1) || (crossTime < 60 && crossdirection == 2)) {
+      moveStraight(thisWinkel, true, 10);
+      kurveFertig = false;
+    } else if (abs(deltaWinkel(winkel, toDegree(thisWinkel - (90 * i)))) > 5 && !kurveFertig) {
+      if (crossdirection == 1) {
+        makeCurve(0, 0, false, 10);
+      } else if (crossdirection == 2) {
+        makeCurve(0, 0, true, 10);
+      }
+    } else {
+      kurveFertig = true;
+      if (crossdirection == 1) {
+        moveStraight(toDegree(thisWinkel - 90), true, 10);
+      } else if (crossdirection == 2) {
+        moveStraight(toDegree(thisWinkel + 90), true, 10);
+      }
     }
+    if ((black(1) || black(2) || black(3)) && crossTime > 100) {
+      if (crossdirection == 1) thisWinkel = toDegree(thisWinkel - 90);
+      if (crossdirection == 2) thisWinkel = toDegree(thisWinkel + 90);
+      crossTime = 0;
+      followLine = true;
+      crossCounter++;
+      curveTime = 40;   //vorher 25
+      // curveNext = true;
+      inCrossing = false;
+    }
+    if (crossTime >= cd) {
+      if (crossdirection == 1) thisWinkel = toDegree(thisWinkel - 90);
+      if (crossdirection == 2) thisWinkel = toDegree(thisWinkel + 90);
+      crossTime = 0;
+      crossCounter++;
+      curveTime = 40;   //vorher 25
+      searchingLine = true;
+      inCrossing = false;
+    }
+    Serial.print("CrossTime: ");
+    Serial.print(crossTime);
+    Serial.print("  crossdirection: ");
+    Serial.println(crossdirection);
+
+    crossTime++;
   }
-  if ((black(1) || black(2) || black(3)) && crossTime > 100) {
-    if (crossdirection == 1) thisWinkel = toDegree(thisWinkel - 90);
-    if (crossdirection == 2) thisWinkel = toDegree(thisWinkel + 90);
-    crossTime = 0;
-    followLine = true;
-    crossCounter++;
-    // curveNext = true;
-    inCrossing = false;
-  }
-  if (crossTime >= cd) {
-    if (crossdirection == 1) thisWinkel = toDegree(thisWinkel - 90);
-    if (crossdirection == 2) thisWinkel = toDegree(thisWinkel + 90);
-    crossTime = 0;
-    searchingLine = true;
-    inCrossing = false;
-  }
-  Serial.print("CrossTime: ");
-  Serial.print(crossTime);
-  Serial.print("  crossdirection: ");
-  Serial.println(crossdirection);
-  crossTime++;
 }
 
 void searchLine() {   //after crossing or curve if middle line was not be found
   straight = true;
   Serial.println("searchLine!");
-  if (searchTime > (20 + (searchCount * 15))) {
+  if (searchTime > (20 + (searchCount * 18))) {
     searchCount++;
     searchTime = -20 - (searchCount * 10);
   }
@@ -278,16 +273,38 @@ void calcWay() {  //1 = blau(VL), 2 = gelb(VR), 3 = grün(HL), 4 = rot(HR)
   followLine = true;
 }
 
-void wait(){      //neu -> ???
+void wait() {     //neu -> ???
   straight = true;
-  if(crossTime > 100){
+  int w = 7000;
+  if (crossDirs[crossCounter - 2] == 3)
+    w  -= 4000;
+  if ((millis() - timeCount) > (w + 5000)) { //5 sek
+    waiting = false;
+    curveTime = 51;
+    statusCar++;
+    whiteTime = 0;
+    followLine = true;
+    Serial.print(millis() - timeCount);
+    Serial.println("  weiter");
+    //crossTime = 0;
+  } else if ((millis() - timeCount) > w) { //7 sek
     followLine = false;
     detachServos(false);
-  }else if(crossTime > 200){
-    followLine = true;
-    waiting = false;
-    crossTime = 0;
+    Serial.print(millis() - timeCount);
+    Serial.println("  wait");
+  } else {
+    Serial.print(millis() - timeCount);
+    Serial.println("  warte");
   }
-  crossTime++;
+}
+
+void theEnd() {
+  straight = true;
+  moveStraight(thisWinkel, true, 10);
+  if ((millis() - timeCount) > 4000) { //4 sek
+    detachServos(false);
+    ending = false;
+    Serial.println("Wieder am Parkplatz!");
+  }
 }
 
